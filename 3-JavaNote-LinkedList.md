@@ -180,3 +180,85 @@ public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
 
 
 
+## 83. Remove Duplicates from Sorted List (Easy) 递归，迭代
+
+**递归**
+
+```java
+    // recursion
+    public ListNode deleteDuplicates(ListNode head) {
+        if (head == null || head.next == null) return head;
+        head.next = deleteDuplicates(head.next);
+        if (head.val == head.next.val) {
+            return head.next;
+        }
+        else {
+            return head;
+        }
+    }
+```
+
+相信函数即可，从第二个开始弄，弄完了以后和第一个比一下，看看怎么样，重的话删掉一个。
+
+时空都是 O(n)
+
+**迭代**
+
+```java
+    // iteration 2
+    public ListNode deleteDuplicates3(ListNode head) {
+        if (head == null || head.next == null) return head;
+        ListNode left = head;
+        ListNode right = head.next;
+        while (right != null) {
+            if (left.val != right.val) {
+                left = left.next;
+                right = right.next;
+            } else {
+                right = right.next;
+                left.next = right;
+            }
+        }
+        return head;
+    }
+```
+
+这里的迭代，具体操作就是**双指针**，左右指针，往下走，特殊处理重复的！
+
+
+
+## 19. Remove Nth Node From End of List (Medium) 双指针 快慢指针
+
+倒数第几个，标准哑节点，快慢指针。
+
+1. **哑结点**的巧妙应用
+   * 链表删除添加等问题，在操作第一个或最后一个时
+   * 常出现**找不到前一个**或者**找不到后一个**的问题
+   * 这个添加哑结点，就是保证了一定会有前一个
+   * 所以这里就要利用哑结点提供的这个**一致条件**（都有前一个） 
+   * 找要删除的结点的前一个 
+
+2. 一遍遍历，双指针，快慢指针
+   * 通过**快慢指针**的距离找到要删除的结点的前一个
+     * 让两个指针保持一个距离，没错，刚好是 k 距离
+   * 然后正常删除
+   * 返回哑结点的next
+
+```java
+// Two pointers
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        ListNode dummy = new ListNode(-1, head);
+        ListNode left = dummy;
+        ListNode right = dummy;
+        while (n-- > 0) {
+            right = right.next;
+        }
+        while (right.next != null) {
+            left = left.next;
+            right = right.next;
+        }
+        left.next = left.next.next;
+        return dummy.next;
+    }
+```
+
