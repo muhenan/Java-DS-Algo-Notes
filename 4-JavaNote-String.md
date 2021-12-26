@@ -224,3 +224,109 @@ Java 语言特性，直接用库函数，有关 regex
   * join 把表里的 String 都连接起来
 
 效率介于解法一和二之间
+
+## 242. Valid Anagram (Easy)
+
+示例 1:
+
+输入: s = "anagram", t = "nagaram"
+输出: true
+示例 2:
+
+输入: s = "rat", t = "car"
+输出: false
+
+### 解法一：只考虑 26 个小写字母或 128 个 unicode 字符 256 ascii 字符
+
+```java
+public boolean isAnagram(String s, String t) {
+    int[] cnts = new int[26];
+    for (char c : s.toCharArray()) {
+        cnts[c - 'a']++;
+    }
+    for (char c : t.toCharArray()) {
+        cnts[c - 'a']--;
+    }
+    for (int cnt : cnts) {
+        if (cnt != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+一个简单的哈希表的应用。
+
+如果是全的字符就弄成 256 就行，把字符直接当索引。
+
+### 解法二：更 general 的方法，应对所有字符
+
+弄一个 HashMap ，应对所有字符：
+
+```java
+    public boolean isAnagram(String s, String t) {
+        HashMap<Character, Integer> my_map = new HashMap<>();
+        for (char c: s.toCharArray()) {
+            my_map.put(c, my_map.getOrDefault(c, 0) + 1);
+        }
+        for (char c: t.toCharArray()) {
+            my_map.put(c, my_map.getOrDefault(c, 0) - 1);
+        }
+        for (int i: my_map.values()) {
+            if (i != 0) return false;
+        }
+        return true;
+    }
+```
+
+
+
+## 409. Longest Palindrome (Easy)
+
+```
+Input : "abccccdd"
+Output : 7
+Explanation : One longest palindrome that can be built is "dccaccd", whose length is 7.
+```
+
+非常简单，还是哈希表，统计各字符出现的次数即可，以字符作为数组索引。
+
+### 解法一：针对 256 字符
+
+```java
+public int longestPalindrome(String s) {
+    int[] cnts = new int[256];
+    for (char c : s.toCharArray()) {
+        cnts[c]++;
+    }
+    int palindrome = 0;
+    for (int cnt : cnts) {
+        palindrome += (cnt / 2) * 2;
+    }
+    if (palindrome < s.length()) {
+        palindrome++;   // 这个条件下 s 中一定有单个未使用的字符存在，可以把这个字符放到回文的最中间
+    }
+    return palindrome;
+}
+```
+
+### 解法二：general，HashMap，针对所有字符
+
+```java
+    public int longestPalindrome(String s) {
+        HashMap<Character, Integer> my_map = new HashMap<>();
+        for (char c: s.toCharArray()) {
+            my_map.put(c, my_map.getOrDefault(c, 0) + 1);
+        }
+        int countOfOdd = 0;
+        int result = 0;
+        for (int i: my_map.values()) {
+            result += i;
+            if (i % 2 == 1) countOfOdd++;
+        }
+        if (countOfOdd > 1) result -= (countOfOdd - 1);
+        return result;
+    }
+```
+
