@@ -330,3 +330,63 @@ public int longestPalindrome(String s) {
     }
 ```
 
+
+
+## 205. Isomorphic Strings
+
+```
+Given "egg", "add", return true.
+Given "foo", "bar", return false.
+Given "paper", "title", return true.
+```
+
+### 解法一：自解方法，用 HashMap 做的记录
+
+用 HashMap 做的记录，时间效率差点，然后要互相都作为模版验证一样，保证这两个 string 的操作都是同地位的。
+
+```java
+    public boolean isIsomorphic(String s, String t) {
+        char[] s1 = s.toCharArray();
+        char[] s2 = t.toCharArray();
+        HashMap<Character, Character> map1 = new HashMap<>();
+        HashMap<Character, Character> map2 = new HashMap<>();
+        for (int i = 0; i < s.length(); i++) {
+            if (map1.get(s1[i]) != null) {
+                if (map1.get(s1[i]) != s2[i]) return false;
+            } else {
+                map1.put(s1[i], s2[i]);
+            }
+            if (map2.get(s2[i]) != null) {
+                if (map2.get(s2[i]) != s1[i]) return false;
+            } else {
+                map2.put(s2[i], s1[i]);
+            }
+        }
+        return true;
+    }
+```
+
+这里注意这个 get 函数，这个 get 可能返回 char 也可能返回 null，但我们没办法用 char 去接，因为如果那样的话，接下来 char 不能弄 char == null，所以这里直接就 get == null 判断的。
+
+这种方法时间效率差点，用了 Java 的 HashMap
+
+### 解法二：数组索引哈希，常规
+
+记录一个字符上次出现的位置，如果两个字符串中的字符上次出现的位置一样，那么就属于同构。
+
+```java
+    public boolean isIsomorphic2(String s, String t) {
+        int[] preIndexOfS = new int[256];
+        int[] preIndexOfT = new int[256];
+        for (int i = 0; i < s.length(); i++) {
+            char sc = s.charAt(i);
+            char tc = t.charAt(i);
+            if (preIndexOfS[sc] != preIndexOfT[tc]) return false;
+            preIndexOfS[sc] = i + 1;
+            preIndexOfT[tc] = i + 1;
+        }
+        return true;
+    }
+```
+
+这里注意一下，Java 的 int [] 弄出来，直接就初始化的时候都帮你弄成 0了，所以这里存上次出现的位置是从 1 开始存的，避免 0 的干扰。
