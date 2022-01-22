@@ -4,6 +4,192 @@
 
 用的是 Java 的 String 类（这里也跟着学习一下 Java 的各种字符串操作）。
 
+## KMP 字符串匹配算法
+
+*永远不要上来就开始摆术语，公式，代码，说这个题应该怎么怎么做，而不说为什么，这是我们国人常犯的错误；一切要从最开始的想法开始说，然后一点一点的优化，才有了最终的解决方法，这才是一个正确的思考过程，而不是机械的背方法，看到什么题就用什么方法，那是不对的，要注重从最开始的思考的过程。*
+
+*一切从最开始的海滩上捡贝壳的孩子开始，从贝壳开始，而不是从收音机的各个部件都叫什么开始。*
+
+***
+
+### KMP 的意义，解决的问题
+
+首先我们说，KMP 解决的问题是：解决字符串匹配问题，就是类似 28 strStr 的问题
+
+意义：
+
+* 其他流行的解决方法的时间复杂度都是 $O(n^2)$ 平方的
+* KMP 可以把时间复杂度做到 $O(n)$ 线性的
+
+### KMP 解析
+
+首先我们思考最初始的暴力匹配的方法，这种方法的问题在于，当我们一次匹配失败后，我们要从在主串上往回走，这导致了平方的时间复杂度，KMP 就是为了解决这个问题，让我们在主串上能够不回头的一直向前走，达到线性的时间复杂度。
+
+#### 传统方法
+
+传统方法：
+
+![image-20220122190418251](4-JavaNote-String.assets/image-20220122190418251.png)
+
+那么如何优化这个算法呢？这里我引用知乎题解里的一句话：
+
+> 要优化一个算法，首先要回答的问题是“我手上有什么信息？”　我们手上的信息是否足够、是否有效，决定了我们能把算法优化到何种程度。请记住：**尽可能利用残余的信息，是[KMP算法](https://www.zhihu.com/search?q=KMP算法&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra={"sourceType"%3A"answer"%2C"sourceId"%3A1032665486})的思想所在**。
+
+传统方法之所以如此低效的原因就是，传统方法的这种行为，属于典型的“没有从之前的错误中学到东西”。
+
+我们接下来要做的就是，**从失败中学到东西！**
+
+#### 从失败中学到东西，利用失败时产生的信息
+
+从之前的匹配中，我们可以认识到从哪里匹配是必定不会成功的，认识到这点，我们要从有可能成功的点上开始重新匹配，比如下面这种情况：
+
+![image-20220122191354536](4-JavaNote-String.assets/image-20220122191354536.png)
+
+* 当我们第一次匹配失败后，我们就知道，如果下次从 1 开始匹配会必然失败，我们要从 2 开始匹配，并且已经可以直接比较 主串[2] 和 模式串[1] 了
+* 第二次匹配失败后，我们知道我们下一次可以从主串 5 开始匹配，并且可以直接比较主串 8 和 模式串 3 了
+
+达到这个效果，我们就可以把时间复杂度变成线性了，因为这样的话，主串是不回头的一直往下走的
+
+接下来的问题在于，我们如何知道下一次匹配从哪里开始匹配，也就是说，我们怎么样知道这次匹配失败后应该把标尺（模式串 P 就是标尺）移动多少（传统方法是每次失败后把标尺移动1），KMP 的改进就在于每次都尽量多的移动标尺。
+
+这里要需要我们做一些**记录**，才让我们知道从哪里开始匹配，这个记录我们称其为 next数组，该数组的每个元素对应模式串的每个字符（该数组只与标尺即模式串 P 有关）。
+
+#### next 数组定义
+
+为了方便理解，我们这样定义 next 数组：
+
+> next[i] 表示 P[0] ~ P[i] 这一个子串，使得 **前k个字符**恰等于**后k个字符** 的最大的k. 特别地，k不能取i+1（因为这个子串一共才 i+1 个字符，自己肯定与自己相等，就没有意义了）。
+
+我们依旧以这个题目为例：
+
+![image-20220122192921207](4-JavaNote-String.assets/image-20220122192921207.png)
+
+对于该题目的next 数组：
+
+| next[i] | **前k个字符**恰等于**后k个字符** 的最大的k |
+| ------- | ------------------------------------------ |
+| 0 a     | 0                                          |
+| 1 b     | 0                                          |
+| 2 a     | 1                                          |
+| 3 a     | 1                                          |
+| 4 b     | 2                                          |
+| 5 a     | 3                                          |
+| 6 c     | 0                                          |
+
+得到这个 next 数组，我们也就基本解决了这个问题。
+
+#### next 数组的构建
+
+（构建这个数据有暴力的时间复杂度平凡的暴力算法，这里就不说了，直接开始讲解时间复杂度线性的方法）
+
+快速构建next数组，是KMP算法的精髓所在，核心思想是“**P自己与自己做匹配**”。
+
+在定义中，不知不觉地就包含了一个匹配——前缀和后缀相等。这意味着我们要使用之前利用过的信息，接下来，我们考虑采用递推的方式求出next数组。如果next[0], next[1], ... next[x-1]均已知，那么如何求出 next[x] 呢？
+
+这里分为两种情况，第一种情况为**顺延**：
+
+![image-20220122195715692](4-JavaNote-String.assets/image-20220122195715692.png)
+
+我们走到 P[x] 时，可以找到 next[x-1]（以下记为now），如果 P[x] 与 P[now] 一样（这里有一个思想上的转化，我们找到的 next[x-1] 值其实可以认为是 pattern 串的一个索引找打相应的元素），那最长相等前后缀的长度就可以扩展一位，很明显 next[x] = now + 1。
+
+>因此这里也可以补充一句 next 数组的定义，next[x] 的值表示如果这个字符在前后缀匹配的子字符串中，那么下一个要比较的字符的位置。那些是 0 的，其实意思就是这个字符不在已经匹配的字符串中，下一个字符直接从 P[0] 开始比较吧。
+
+这个就是顺延的情况
+
+第二种情况是**找子字符的顺延：**
+
+例如这种情况
+
+![image-20220122200230519](4-JavaNote-String.assets/image-20220122200230519.png)
+
+我们无法继续顺延了，但我们知道字符串A和字符串B肯定是一样的，那么就相当于，接下来我们要在这个新的子串里找前后缀匹配。
+
+![image-20220122200643504](4-JavaNote-String.assets/image-20220122200643504.png)
+
+这时我们就要认为 P[X] 是在红色的 d 处，我们要 P[x - 1] 就是红 d 前面的 b，我们找到的新的 now 就是 2，然后再看能不能顺延：
+
+![image-20220122200841275](4-JavaNote-String.assets/image-20220122200841275.png)
+
+来看上面的例子可以看出，当P[now]与P[x]不相等的时候，我们需要缩小now——把now变成next[now-1]，直到P[now]=P[x]为止。P[now]=P[x]时，就可以直接顺延了。
+
+> 这里我补充说明一下这个 now 的定义的，now 就是 P[x] 的上一个字符对应的前缀的后面一个字符的指针，当不能顺延时，now 就要缩小，变成更小的子串里的指针。（这里我愿称其为 next 数组跳转，或者按你理解的一直一半一半的切）
+>
+> 我理解为 now 是指针！
+>
+> 当子字符串不断缩小，缩小到没有自身的前后缀匹配时，比如该题中 P[x] 是e，那么子字符串 ab 中没有自身的前后缀匹配了（我们可以通过 next[now - 1] == 0 来得到这个信息）这种情况下 next[x] 就赋值为 0。
+
+至此，我们就构建好了 next 数组
+
+>关于构建 next 数组的时间复杂度问题，确实在匹配失败时，字符串不往下走了，而是产生 next 数组跳转，但是即使算上这些多出来的时间，总的时间复杂度也不会超过 2m，因为你每切（跳转）一次都伴随着一次成功的匹配，平均过去之后，最多也就是 2m。
+>
+>所以这里为暂时说服自己构建 next 数组的时间复杂度是 O(m)
+
+```java
+    private int[] getNextArr(String pattern) {
+        int length = pattern.length();
+        int next[] = new int[length];
+        if (length == 0) return next;
+        next[0] = 0;
+        int i = 1, now = 0;
+        while (i < length) {
+            if (pattern.charAt(i) == pattern.charAt(now)) {
+                now++;
+                next[i] = now;
+                i++;
+            } else if (now != 0) {
+                now = next[now - 1];
+            } else {
+                next[i] = now;
+                i++;
+            }
+        }
+        return next;
+    }
+```
+
+#### 通过 next 数组匹配字符串
+
+这里写代码时注意：
+
+* 每次标尺向前推时，position 的变化情况
+* 并不是每次 i 都加一
+
+```java
+    public int search(String haystack, String needle) {
+        int next[] = getNextArr(needle);
+        int lengthOfS = haystack.length();
+        int lengthOfP = needle.length();
+        if(lengthOfP == 0) return 0;
+        int position = -1;
+        int i = 0, j = 0;
+        while (i < lengthOfS) {
+            if (haystack.charAt(i) == needle.charAt(j)) { //匹配成功，两个字符串都往下走
+                if(j == 0) position = i;
+                if(j == lengthOfP - 1) return position;
+                i++;
+                j++;
+            } else { // 标尺不指着 0，推标尺，主字符串不往下走
+                if (j != 0){
+                    int old_j = j;
+                    j = next[j - 1];
+                    position += (old_j - j);
+                } else { // 标尺指着 0，只推主字符串
+                    i++;
+                }
+            }
+        }
+        return -1;
+    }
+```
+
+
+
+## Manacher 寻找最长回文子串（dp + 中心扩散）
+
+
+
+
+
 ## 字符串循环移位包含 String Rotate Contain
 
 **编程之美 3.1**
@@ -390,3 +576,176 @@ Given "paper", "title", return true.
 ```
 
 这里注意一下，Java 的 int [] 弄出来，直接就初始化的时候都帮你弄成 0了，所以这里存上次出现的位置是从 1 开始存的，避免 0 的干扰。
+
+
+
+## 647. Palindromic Substrings (Medium)
+
+```
+Input: "aaa"
+Output: 6
+Explanation: Six palindromic strings: "a", "a", "a", "aa", "aa", "aaa".
+```
+
+### 解法一：枚举所有可能的子字符串，判断是否是回文
+
+时间复杂度达到了恐怖的 O(n3)，用时 303ms，只超过 5% 的同学。
+
+完全不可取！！不可理喻！！
+
+不过倒是自己写了一个判断是否是回文串的小函数，算是一个收获：
+
+```java
+    // 判断一个字符串是否回文
+    private boolean isPalindrome(String s, int start, int end) {
+        int left = start;
+        int right = end;
+        while (left < right) {
+            if (s.charAt(left) != s.charAt(right)) return false;
+            left++;
+            right--;
+        }
+        return true;
+    }
+
+    // 时间复杂度达到了恐怖的 n3 ，完全不可取！！不可理喻！
+    public int countSubstrings(String s) {
+        int length = s.length();
+        int count = 0;
+        for (int i = 0; i < length; i++) {
+            for (int j = i; j < length; j++) {
+                if (isPalindrome(s, i, j)) count++;
+            }
+        }
+        return count;
+    }
+```
+
+### 解法二：中心拓展
+
+Time：O(n2)
+
+Space：O(1)
+
+```java
+    private int count2 = 0;
+
+    private void extendSubstrings(String s, int start, int end) {
+        int length = s.length();
+        while (start >= 0 && end < length && s.charAt(start) == s.charAt(end)) {
+            start--;
+            end++;
+            count2++;
+        }
+    }
+
+    public int countSubstrings2(String s) {
+        int length = s.length();
+        for (int i = 0; i < length; i++) {
+            extendSubstrings(s, i, i); // 奇数长度
+            extendSubstrings(s, i, i + 1); // 偶数长度
+        }
+        return count2;
+    }
+```
+
+很好理解，从每一个的中心去拓展，这样的话复杂度降到平方级别了。
+
+### 解法三：Manacher 算法
+
+
+
+## 28. 实现 strStr()：字符串匹配
+
+实现 strStr() 函数。
+
+给你两个字符串 haystack 和 needle ，请你在 haystack 字符串中找出 needle 字符串出现的第一个位置（下标从 0 开始）。如果不存在，则返回  -1 。
+
+说明：
+
+当 needle 是空字符串时，我们应当返回什么值呢？这是一个在面试中很好的问题。
+
+对于本题而言，当 needle 是空字符串时我们应当返回 0 。这与 C 语言的 strstr() 以及 Java 的 indexOf() 定义相符。 
+
+示例 1：
+
+输入：haystack = "hello", needle = "ll"
+输出：2
+示例 2：
+
+输入：haystack = "aaaaa", needle = "bba"
+输出：-1
+示例 3：
+
+输入：haystack = "", needle = ""
+输出：0
+
+**这是个非常非常经典的题目，字符串匹配**
+
+**就类似于我们常用的搜索，所搜关键字，然后实际也是去做字符串匹配**
+
+### 解法一：暴力匹配 O(n2)
+
+不赘述，两个 for
+
+```java
+    // 1. 暴力两个 for
+    public int strStr(String haystack, String needle) {
+        int lengthOfS = haystack.length();
+        int lengthOfP = needle.length();
+        if(lengthOfP == 0) return 0;
+        for (int i = 0; i < lengthOfS; i++) {
+            if (lengthOfS - i < lengthOfP) break;
+            for (int j = 0; j < lengthOfP; j++) {
+                if (haystack.charAt(i + j) == needle.charAt(j)) {
+                    if (j == lengthOfP - 1) return i;
+                } else break;
+            }
+        }
+        return -1;
+    }
+```
+
+自己的写法，也是两个 for 的变形，还是 O(n2) 的时间复杂度
+
+```java
+    // 2. 自己的写法 O(n2)
+    public int strStr2(String haystack, String needle) {
+        int lengthOfS = haystack.length();
+        int lengthOfP = needle.length();
+        if(lengthOfP == 0) return 0;
+        int j = 0;
+        int ans = -1;
+        for (int i = 0; i < lengthOfS; i++) {
+            if (haystack.charAt(i) == needle.charAt(j)) {
+                if (j == 0) ans = i;
+                if (j == lengthOfP - 1) return ans;
+                j++;
+            } else {
+                if(j != 0){
+                    j = 0;
+                    i = ans;
+                }
+            }
+        }
+        return -1;
+    }
+```
+
+### 解法二：KMP
+
+见最上面的 KMP 算法即可
+
+
+
+# 待办
+
+力扣题目：
+
+* 都是涉及到 Manacher 回文子串的
+
+  * 最长回文子串 https://leetcode-cn.com/problems/longest-palindromic-substring/
+
+  * 回文子串个数 https://leetcode-cn.com/problems/palindromic-substrings/
+
+* 翻转字符串中的单词 151
