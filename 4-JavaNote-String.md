@@ -190,6 +190,125 @@
 
 > 这个思想怎么来呢，同样的，我们要从利用前面出现过的信息
 
+核心的思想在于，中心拓展的时候记录一些东西，下次再中心拓展的时候，用到之前的东西，不用再从搞过的地方重新弄，用上之前得出过的所有结果。
+
+那么我们从之前的中心拓展中可以学到什么，可以通过对称学到这次的中心拓展是否结束，或者从哪里开始。
+
+这里我们用两个变量：
+
+* center 上次中心拓展的中心，比如下面的 j
+* minRightOutsider 上一次中心拓展得到字符串的最小的最右的外边一个，比如下面的最右边的 e
+  * 我们就是用这个 minRightOutsider 证明我们是线性的只走一次的
+
+比如下面这种情况：
+
+![image-20220128111331346](4-JavaNote-String.assets/image-20220128111331346.png)
+
+通过对称我们知道，i 的中心拓展的东西，一定是包含在上次拓展的字符串里面了，所以肯定 i 就不用中心拓展了，就和上次对称的一样就行了。
+
+比如这种情况：
+
+![image-20220128112002759](4-JavaNote-String.assets/image-20220128112002759.png)
+
+这种的话，可以看到从 i 开始中心拓展的话，一定顶到 minRightOutsider 了，所以必须继续拓展了，从 minRightOutsider 开始拓展，然后完成这次拓展。
+
+最后每次 i 拓展为完成后，都产生新的 minRightOutsider ，和之前的比较一下，如果大于之前的，那么就更新center 和 minRightOutsider。
+
+总体而言最关键的就是下面这段代码：
+
+```java
+        // 开始manacher式的中心拓展
+        int center = 0, minRightOutsider = 0, newMinRightOutsider = 0;
+
+        for (int i = 1; i < lengOfLongStr - 1; i++) {
+            if (minRightOutsider > i) radius[i] = Math.min(radius[2 * center - i], minRightOutsider - i);
+            else radius[i] = 1;
+            while (longString.charAt(i + radius[i]) == longString.charAt(i - radius[i])) radius[i]++;
+            newMinRightOutsider = i + radius[i]; // 从 i 中心拓展后得到新的 min right outsider
+            if (newMinRightOutsider > minRightOutsider) {
+                minRightOutsider = newMinRightOutsider;
+                center = i;
+            }
+        }
+```
+
+上面这段代码的简单讲解：
+
+1. 第一个 if ，通过对称，从之前的拓展中学到东西，直接初始化一下这次的 radius
+2. while 开始新的中心拓展
+3. 最后的一小段，是否更新 minRightOutsider
+
+当然除此以外还有各种细节问题，下面是代码的细节问题的讲解：
+
+* 给各个字符中间插上 #，给插完的字符串前后插上 & *，这样就保证都是奇数型的拓展了
+* radius 数组，记录以 i 为中心的拓展出来的字符串的半径
+* 得到 radius 数组后，对其还要各种处理，详情见代码
+
+```java
+    public void manacher(String s) {
+
+        int length = s.length();
+
+        // 给原字符串中间插#
+        StringBuffer t = new StringBuffer("&#");
+        for (int i = 0; i < length; ++i) {
+            t.append(s.charAt(i));
+            t.append('#');
+        }
+        t.append('*');
+        String longString = t.toString();
+        int lengOfLongStr = longString.length();
+
+        // 半径数组
+        int radius[] = new int[length * 2 + 3];
+
+        // 开始manacher式的中心拓展
+        int center = 0, minRightOutsider = 0, newMinRightOutsider = 0;
+
+        for (int i = 1; i < lengOfLongStr - 1; i++) {
+            if (minRightOutsider > i) radius[i] = Math.min(radius[2 * center - i], minRightOutsider - i);
+            else radius[i] = 1;
+            while (longString.charAt(i + radius[i]) == longString.charAt(i - radius[i])) radius[i]++;
+            newMinRightOutsider = i + radius[i]; // 从 i 中心拓展后得到新的 min right outsider
+            if (newMinRightOutsider > minRightOutsider) {
+                minRightOutsider = newMinRightOutsider;
+                center = i;
+            }
+        }
+
+        // 结束，已得到 radius 数组，接下来处理结果
+        int maxLength = 0, countOfPalin = 0, PositionOfLongestPalind = 0;
+        for (int i = 0; i < lengOfLongStr; i++) {
+            if (radius[i] > maxLength) {
+                maxLength = radius[i];
+                PositionOfLongestPalind = i;
+            }
+            countOfPalin += (radius[i] / 2);
+        }
+        maxLength -= 1;
+
+        // 展示结果
+        System.out.println(longString);
+        for (int element: radius) System.out.print(element);
+        System.out.println();
+        System.out.println(maxLength);
+        System.out.println(countOfPalin);
+        System.out.println(PositionOfLongestPalind);
+
+        int maxRadius = (radius[PositionOfLongestPalind] - 1) / 2;
+        int realCenter = (PositionOfLongestPalind - 1) / 2;
+        int beginIndex = realCenter - maxRadius;
+      
+        System.out.println(s);
+        System.out.println(realCenter);
+        System.out.println(maxRadius);
+      
+        String subPalind = s.substring(beginIndex, beginIndex + maxLength);
+      
+        System.out.println(subPalind);
+    }
+```
+
 
 
 
