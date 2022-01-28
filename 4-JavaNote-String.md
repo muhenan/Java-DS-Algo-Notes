@@ -899,12 +899,61 @@ s 仅由数字和英文字母（大写和/或小写）组成
 
 
 
-# 待办
+## 696. Count Binary Substrings (Easy) 统计二进制字符串中连续 1 和连续 0 数量相同的子字符串个数
 
-力扣题目：
+给定一个字符串 s，统计并返回具有相同数量 0 和 1 的非空（连续）子字符串的数量，并且这些子字符串中的所有 0 和所有 1 都是成组连续的。
 
-* 都是涉及到 Manacher 回文子串的
-  * 回文子串个数 https://leetcode-cn.com/problems/palindromic-substrings/
-  * 一个字符串中最长的回文子串，不许自由组合
+重复出现（不同位置）的子串也要统计它们出现的次数。
 
-* 翻转字符串中的单词 151
+
+示例 1：
+
+输入：s = "00110011"
+输出：6
+解释：6 个子串满足具有相同数量的连续 1 和 0 ："0011"、"01"、"1100"、"10"、"0011" 和 "01" 。
+注意，一些重复出现的子串（不同位置）要统计它们出现的次数。
+另外，"00110011" 不是有效的子串，因为所有的 0（还有 1 ）没有组合在一起。
+示例 2：
+
+输入：s = "10101"
+输出：4
+解释：有 4 个子串："10"、"01"、"10"、"01" ，具有相同数量的连续 1 和 0 。
+
+时间复杂度是 O(n)
+
+思路，从之前的遍历中学到东西，我们用两个变量：
+
+* preLen：上次的连续的长度
+* curLen：这次的连续的长度
+  * 比如上次是 0 字符串，这次就是 1 字符串；上次是 1 字符串，这次就是 0 字符串
+
+```java
+  i
+001
+# 比如这种情况到1，那么 preLen 就是 2，curLen就是 1，preLen >= curLen，count++
+    
+   i
+0011
+# 比如这种情况到1，那么 preLen 就是 2，curLen就是 2，preLen >= curLen，count++
+
+# 当遍历到的 i 和上一个不同时，更新 preLen，curLen
+```
+
+```java
+    public int countBinarySubstrings(String s) {
+        int length = s.length();
+        if (length <= 1) return 0;
+        int preLen = 0, curLen = 1, count = 0;
+        for (int i = 1; i < length; i++) {
+            if (s.charAt(i) == s.charAt(i - 1)) curLen++;
+            else {
+                preLen = curLen;
+                curLen = 1;
+            }
+
+            if (preLen >= curLen) count++;
+        }
+        return count;
+    }
+```
+
