@@ -205,6 +205,8 @@ Deque有三种⽤途：
 
 关于Map 字典，我们常用的方式是接口写 Map，实现写 HashMap。
 
+# Path Sum
+
 ## Path Sum 1
 
 给你二叉树的根节点 root 和一个表示目标和的整数 targetSum 。判断该树中是否存在 根节点到叶子节点 的路径，这条路径上所有节点值相加等于目标和 targetSum 。如果存在，返回 true ；否则，返回 false 。
@@ -404,3 +406,49 @@ private void pathSumWithList(TreeNode root, int targetSum, Deque<Integer> mylist
     }
     // 体验 dfs 深度优先搜索，体验先序遍历
 ```
+
+
+
+## 相同节点值的最大路径长度 687 Longest Univalue Path 
+
+```
+             1
+            / \
+           4   5
+          / \   \
+         4   4   5
+
+Output : 2
+```
+
+反思一下这道题
+
+```java
+private int path = 0;
+
+public int longestUnivaluePath(TreeNode root) {
+    dfs(root);
+    return path;
+}
+
+private int dfs(TreeNode root){
+    if (root == null) return 0;
+    int left = dfs(root.left);
+    int right = dfs(root.right);
+    int leftPath = root.left != null && root.left.val == root.val ? left + 1 : 0;
+    int rightPath = root.right != null && root.right.val == root.val ? right + 1 : 0;
+    path = Math.max(path, leftPath + rightPath);
+    return Math.max(leftPath, rightPath);
+}
+```
+
+本题属于：树、dfs 类型的题目
+
+* 全局变量 path：首先本题要找到最大长度的话，从做题的角度，显然用一个全局变量来记录会比较简化思维，如果用返回值的话，会使函数变得复杂，函数的返回值我们有其他用处，不一定返回值就一定是题目的答案
+* DFS：开始DFS，DFS 的基本原理就是 dfs(root) 里面会有 dfs(root.left) 和 dfs(root.right)，这里的 dfs 返回的其实是从这个节点向下最长的一个路径有多长，但是在算这些东西的过程中，也算了左右的求和，这个求和的值会和最终答案path比较，保留最长的一个。所以 DFS 这个函数是有两个功能：
+  1. 以这个 root 为根节点，找一个左右都有的路径，记录这个路径的长度并和最终结果比较更新，这个功能通过全局变量实现。
+  2. 以这个 root 为根节点，找到左右两边那边的路径更长，并返回这个更长的单边的路径。
+* 关于判断空，判断叶子节点等等，其实这些情况不用考虑这个么多，最重要的是有空的时候的处理就好。
+
+# 问题分类：二叉树的路径问题
+
