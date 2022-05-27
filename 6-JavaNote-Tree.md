@@ -450,5 +450,46 @@ private int dfs(TreeNode root){
   2. 以这个 root 为根节点，找到左右两边那边的路径更长，并返回这个更长的单边的路径。
 * 关于判断空，判断叶子节点等等，其实这些情况不用考虑这个么多，最重要的是有空的时候的处理就好。
 
-# 问题分类：二叉树的路径问题
+# 问题分类：树的路径问题
 
+网址：https://leetcode.cn/problems/longest-univalue-path/solution/yi-pian-wen-zhang-jie-jue-suo-you-er-cha-94j7/
+
+Leetcode 的一位博主将路径问题分为两类：
+
+1. 自顶向下，路径一定是上到下的，根节点到一个叶子节点
+2. 非自顶向下，任意路径
+
+第一种就不赘述了，一般用 DFS 先序遍历都能解决
+
+主要是第二种，以 687 为例
+
+这类题目一般解题思路如下：
+设计一个辅助函数maxpath，调用自身求出以一个节点为根节点的左侧最长路径left和右侧最长路径right，那么经过该节点的最长路径就是left+right
+接着只需要从根节点开始dfs,不断比较更新全局变量即可
+
+
+```java
+int res=0;
+int maxPath(TreeNode *root) //以root为路径起始点的最长路径
+{
+    if (!root)
+        return 0;
+    int left=maxPath(root->left);
+    int right=maxPath(root->right);
+    res = max(res, left + right + root->val); //更新全局变量  
+    return max(left, right);   //返回左右路径较长者
+}
+```
+这类题型DFS注意点：
+1、left,right代表的含义要根据题目所求设置，比如最长路径、最大路径和等等
+
+
+2、全局变量res的初值设置是0还是INT_MIN要看题目节点是否存在负值,如果存在就用INT_MIN，否则就是0
+
+3、注意两点之间路径为1，因此一个点是不能构成路径的
+
+# 问题分类：树的遍历问题
+
+掘金大神的所有树遍历问题的总结：https://juejin.cn/post/6844904047107899400
+
+掘金官网：https://juejin.cn/
