@@ -243,11 +243,17 @@ public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
    * 这个添加哑结点，就是保证了一定会有前一个
    * 所以这里就要利用哑结点提供的这个**一致条件**（都有前一个） 
    * 找要删除的结点的前一个 
+   * 关于哑节点：
+     * 比如说链表总共有 5 个节点，题目就让你删除倒数第 5 个节点，也就是第一个节点，那按照算法逻辑，应该首先找到倒数第 6 个节点。但第一个节点前面已经没有节点了，这就会出错。
+     * 但有了我们虚拟节点 `dummy` 的存在，就避免了这个问题，能够对这种情况进行正确的删除。
 
 2. 一遍遍历，双指针，快慢指针
+
    * 通过**快慢指针**的距离找到要删除的结点的前一个
      * 让两个指针保持一个距离，没错，刚好是 k 距离
+
    * 然后正常删除
+
    * 返回哑结点的next
 
 ```java
@@ -702,4 +708,72 @@ $$
 ### 环的长度
 
 通过上面的东西，我们已经明白了，我们可以认为整个过程是 fast 从后面追 slow，然后环的长度是多少呢，相遇一次后，再继续走，下一次再遇到时，刚好是 slow 走了一圈，fast 走了两圈（因为你可以想见，slow 走半圈时，fast 是走一圈），从第一次相遇到第二次相遇，slow 刚好走了一圈，记录下这个步数，就是环长。
+
+
+
+## labuladong 双指针和链表
+
+### 一些技巧
+
+* 当你要创建一个新链表的时候，最好使用虚拟头，dummy 结点，**使用虚拟头结点可以简化边界情况的处理**
+  * 把一个链表拆成两个链表，这也叫创建新链表
+  * leetcode：21，86
+* 在链表处理中有时候需要断开链表 （lt 86）
+
+```java
+        // 断开原链表中的每个节点的 next 指针
+        ListNode temp = p.next;
+        p.next = null;
+        p = temp;
+```
+
+### 快节点是慢节点二倍
+
+用于：
+
+* 找中点
+* 找是否有环
+* 找到环以后找环的长度
+* 找环的起点，或者说环和那个直线的交界处
+* 两个链表的交界处
+  * 也可以用 计算两条链表的长度 来计算
+
+
+
+## labuladong 链表和优先队列
+
+关于优先队列的 capacity
+
+A priority queue is unbounded, but has an internal capacity governing the size of an array used to store the elements on the queue. It is always at least as large as the queue size. As elements are added to a priority queue, its capacity grows automatically. The details of the growth policy are not specified.
+
+merge k lists
+
+```java
+ListNode mergeKLists(ListNode[] lists) {
+    if (lists.length == 0) return null;
+    // 虚拟头结点
+    ListNode dummy = new ListNode(-1);
+    ListNode p = dummy;
+    // 优先级队列，最小堆
+    PriorityQueue<ListNode> pq = new PriorityQueue<>(
+        lists.length, (a, b)->(a.val - b.val));
+    // 将 k 个链表的头结点加入最小堆
+    for (ListNode head : lists) {
+        if (head != null)
+            pq.add(head);
+    }
+
+    while (!pq.isEmpty()) {
+        // 获取最小节点，接到结果链表中
+        ListNode node = pq.poll();
+        p.next = node;
+        if (node.next != null) {
+            pq.add(node.next);
+        }
+        // p 指针不断前进
+        p = p.next;
+    }
+    return dummy.next;
+}
+```
 
